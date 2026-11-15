@@ -1,2 +1,2 @@
 # annesmix
-A November playlist dedicated to you. Enjoy~
+A November playlist dedicated to you. Enjoy!
