@@ -1,0 +1,948 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>awesome mix</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;500;700&family=Oooh+Baby&display=swap" rel="stylesheet">
+<style>
+    /* Optional: put a handwriting font file named mixhand.woff2 (or .ttf / .otf) next to this
+       page and it replaces the stand-in everywhere. Without it, 'Oooh Baby' is used. */
+    @font-face {
+        font-family: 'MixHand';
+        src: url('mixhand.woff2') format('woff2'), url('mixhand.ttf') format('truetype'), url('mixhand.otf') format('opentype');
+        font-display: swap;
+    }
+
+    /* One palette per side, sampled from the cassette photos.
+       Change a colour here and the whole page follows. */
+    body.side-a { --bg: #1b0c12; --accent: #ff8fa3; }  /* pink Denon  */
+    body.side-b { --bg: #130f1c; --accent: #b8a5dc; }  /* smoky Akai  */
+    body.side-c { --bg: #08141c; --accent: #38c6ea; }  /* blue Fuji   */
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+        background: var(--bg);
+        color: rgba(255,255,255,0.7);
+        font-family: 'Bricolage Grotesque', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        height: 100dvh;
+        overflow: hidden;
+        transition: background 4s ease;
+    }
+
+    /* ambient glow */
+    body::before {
+        content: '';
+        position: fixed;
+        top: -10vh;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 60vw;
+        height: 40vh;
+        border-radius: 50%;
+        pointer-events: none;
+        background: var(--accent);
+        filter: blur(80px);
+        opacity: 0.14;
+        transition: background 4s ease;
+    }
+
+    /* ===== TOP: CASSETTE ===== */
+    .top-zone {
+        position: fixed;
+        top: 0; left: 0; right: 0;
+        z-index: 50;
+        display: flex;
+        justify-content: center;
+        align-items: flex-start;
+        padding-top: 16px;
+        height: 160px;
+        background: linear-gradient(to bottom, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.3) 50%, transparent 100%);
+        pointer-events: none;
+    }
+
+    .cassette {
+        position: relative;
+        width: 200px;
+        aspect-ratio: 1.58;
+    }
+
+    .deck {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        border-radius: 8px;
+        opacity: 0;
+        transition: opacity 1.5s ease;
+        box-shadow: 0 14px 44px color-mix(in srgb, var(--accent) 28%, transparent);
+    }
+
+    body.side-a .deck-a,
+    body.side-b .deck-b,
+    body.side-c .deck-c { opacity: 1; }
+
+    .cassette.spinning { animation: float 4s ease-in-out infinite; }
+
+    @keyframes float {
+        0%, 100% { transform: translateY(0) rotate(-1deg); }
+        50%      { transform: translateY(-4px) rotate(1deg); }
+    }
+
+    .side-tag {
+        position: absolute;
+        bottom: -24px;
+        left: 50%;
+        transform: translateX(-50%);
+        font-family: 'MixHand', 'Oooh Baby', cursive;
+        font-size: 22px;
+        letter-spacing: 0.5px;
+        white-space: nowrap;
+        color: var(--accent);
+        transition: color 1.5s ease;
+    }
+
+    /* ===== MIDDLE: TRACKLIST ===== */
+    .scroll-zone {
+        position: absolute;
+        top: 160px;
+        bottom: 170px;
+        left: 0; right: 0;
+        overflow-y: auto;
+        padding: 30px 20px 40px;
+        display: flex;
+        justify-content: center;
+        scroll-behavior: smooth;
+        -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 18px, #000 calc(100% - 34px), transparent 100%);
+        mask-image: linear-gradient(to bottom, transparent 0, #000 18px, #000 calc(100% - 34px), transparent 100%);
+    }
+
+    .scroll-zone::-webkit-scrollbar { width: 3px; }
+    .scroll-zone::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
+
+    .tracklist { width: 100%; max-width: 340px; }
+
+    .act-label {
+        font-family: 'MixHand', 'Oooh Baby', cursive;
+        font-size: 24px;
+        font-weight: 400;
+        letter-spacing: 0.3px;
+        padding: 28px 0 8px;
+        opacity: 0.75;
+        color: var(--accent);
+        transition: color 1.5s ease;
+    }
+
+    .track {
+        display: flex;
+        align-items: baseline;
+        gap: 12px;
+        padding: 12px 8px;
+        cursor: pointer;
+        opacity: 0.35;
+        border-radius: 6px;
+        transition: all 0.3s ease;
+    }
+
+    .track:hover { opacity: 0.7; background: rgba(255,255,255,0.02); }
+    .track.active { opacity: 1; background: rgba(255,255,255,0.05); }
+
+    .track-num {
+        font-size: 10px;
+        font-variant-numeric: tabular-nums;
+        min-width: 18px;
+        color: var(--accent);
+        transition: color 1.5s ease;
+    }
+
+    .track-info { flex: 1; }
+    .track-title { font-size: 14px; font-weight: 500; color: rgba(255,255,255,0.85); }
+    .track.active .track-title { font-weight: 600; }
+    .track-artist { font-size: 11px; color: rgba(255,255,255,0.3); margin-top: 1px; }
+
+    .track-indicator {
+        width: 5px; height: 5px;
+        border-radius: 50%;
+        flex-shrink: 0;
+        opacity: 0;
+        background: var(--accent);
+        transition: opacity 0.4s ease;
+    }
+
+    .track.active .track-indicator { opacity: 1; animation: breathe 2s ease-in-out infinite; }
+
+    @keyframes breathe {
+        0%, 100% { opacity: 1; transform: scale(1); }
+        50%      { opacity: 0.4; transform: scale(0.7); }
+    }
+
+    /* ===== BOTTOM: PLAYER BAR (thumb-sized) ===== */
+    .player-bar {
+        position: fixed;
+        bottom: 0; left: 0; right: 0;
+        z-index: 100;
+        padding: 12px 20px calc(16px + env(safe-area-inset-bottom, 0px));
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 4px;
+        background: linear-gradient(to top, rgba(0,0,0,0.96) 55%, transparent);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+    }
+
+    .player-bar > * { width: 100%; max-width: 380px; }
+
+    .now-playing {
+        font-family: 'MixHand', 'Oooh Baby', cursive;
+        font-size: 21px;
+        color: rgba(255,255,255,0.85);
+        text-align: center;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        min-height: 26px;
+    }
+
+    /* tall invisible hit area, thin visible line */
+    .bar-progress {
+        height: 26px;
+        display: flex;
+        align-items: center;
+        position: relative;
+        cursor: pointer;
+    }
+
+    .bar-progress::before {
+        content: '';
+        position: absolute;
+        left: 0; right: 0;
+        height: 5px;
+        border-radius: 3px;
+        background: rgba(255,255,255,0.14);
+    }
+
+    .bar-fill {
+        position: relative;
+        height: 5px;
+        width: 0%;
+        border-radius: 3px;
+        background: var(--accent);
+        transition: background 1.5s ease;
+    }
+
+    .bar-controls {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .bar-btn {
+        width: 52px;
+        height: 52px;
+        border-radius: 50%;
+        background: none;
+        border: none;
+        color: rgba(255,255,255,0.6);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: color 0.2s, transform 0.15s;
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    .bar-btn:hover { color: #fff; }
+    .bar-btn:active { transform: scale(0.9); }
+    .bar-btn.active-mode { color: var(--accent); }
+
+    .bar-btn svg { width: 24px; height: 24px; fill: currentColor; }
+    .bar-btn svg.stroke { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+    .bar-btn.play-btn {
+        width: 68px;
+        height: 68px;
+        background: var(--accent);
+        color: var(--bg);
+        transition: background 1.5s ease, color 1.5s ease, transform 0.15s;
+    }
+    .bar-btn.play-btn:hover { color: var(--bg); }
+    .bar-btn.play-btn svg { width: 28px; height: 28px; }
+    .play-btn .i-pause { display: none; }
+    .play-btn.is-playing .i-pause { display: block; }
+    .play-btn.is-playing .i-play { display: none; }
+
+    /* film grain over everything */
+    body::after {
+        content: '';
+        position: fixed;
+        inset: 0;
+        z-index: 200;
+        pointer-events: none;
+        opacity: 0.09;
+        background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 .9 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+    }
+
+    button, select { font-family: inherit; }
+
+    /* ===== INTRO / CODE SCREEN: three orbs, a day passing ===== */
+    .gate {
+        --g-bg: #1b0c12;
+        --g-acc: #ff8fa3;
+        position: fixed;
+        inset: 0;
+        z-index: 300;
+        background-color: var(--g-bg);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        padding: 24px;
+        text-align: center;
+        overflow: hidden;
+        transition: opacity 0.8s ease, background-color 2.2s ease;
+    }
+    .gate[data-phase="1"] { --g-bg: #130f1c; --g-acc: #b8a5dc; }
+    .gate[data-phase="2"] { --g-bg: #08141c; --g-acc: #38c6ea; }
+    .gate::before {
+        content: '';
+        position: absolute;
+        left: 50%; top: 42%;
+        width: 120vw; height: 120vw;
+        max-width: 900px; max-height: 900px;
+        transform: translate(-50%, -50%);
+        border-radius: 50%;
+        background-color: var(--g-acc);
+        filter: blur(110px);
+        opacity: 0.16;
+        pointer-events: none;
+        transition: background-color 2.2s ease;
+    }
+    .gate > * { position: relative; }
+    .gate.hidden { opacity: 0; pointer-events: none; }
+
+    .gate-title {
+        font-family: 'MixHand', 'Oooh Baby', cursive;
+        font-weight: 400;
+        font-size: 56px;
+        letter-spacing: -0.5px;
+        color: rgba(255,255,255,0.92);
+    }
+
+    /* the sun sets and the moon rises: left to right, daylight to midnight */
+    .sky { display: flex; align-items: flex-end; justify-content: center; gap: 30px; margin: 28px 0 24px; }
+    .stop {
+        --c: #ff8fa3;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 4px;
+        opacity: 0.32;
+        transform: scale(0.9);
+        transition: opacity 1.2s ease, transform 1.2s ease;
+    }
+    .stop:nth-child(2) { --c: #b8a5dc; }
+    .stop:nth-child(3) { --c: #38c6ea; }
+    .stop:nth-child(1), .stop:nth-child(3) { margin-bottom: 34px; }
+    .gate[data-phase="0"] .stop:nth-child(1),
+    .gate[data-phase="1"] .stop:nth-child(2),
+    .gate[data-phase="2"] .stop:nth-child(3) { opacity: 1; transform: scale(1.08); }
+
+    .orbwrap { position: relative; display: block; width: 58px; height: 58px; margin-bottom: 8px; filter: drop-shadow(0 0 14px var(--c)); }
+    .orb {
+        display: block;
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        background: radial-gradient(circle at 34% 30%, #fff 0 5%, color-mix(in srgb, var(--c) 40%, #fff) 14%, var(--c) 55%, color-mix(in srgb, var(--c) 55%, #000) 100%);
+    }
+    .orb-dusk {
+        -webkit-mask-image: linear-gradient(to bottom, #000 0 54%, transparent 54%);
+        mask-image: linear-gradient(to bottom, #000 0 54%, transparent 54%);
+    }
+    .orbwrap.horizon::after {
+        content: '';
+        position: absolute;
+        left: -18px; right: -18px;
+        top: 54%;
+        height: 2px;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.55), transparent);
+    }
+    .orb-night {
+        -webkit-mask-image: radial-gradient(circle at 30% 32%, transparent 0 25px, #000 26px);
+        mask-image: radial-gradient(circle at 30% 32%, transparent 0 25px, #000 26px);
+    }
+
+    .stop-side { font-size: 12px; letter-spacing: 1.2px; color: rgba(255,255,255,0.5); }
+    .stop-name {
+        font-family: 'MixHand', 'Oooh Baby', cursive;
+        font-size: 28px;
+        color: var(--c);
+    }
+
+    .gate-form { display: flex; gap: 8px; width: 100%; max-width: 300px; }
+    .gate-form input {
+        flex: 1;
+        min-width: 0;
+        height: 48px;
+        padding: 0 18px;
+        border-radius: 24px;
+        border: 1px solid rgba(255,255,255,0.18);
+        background: rgba(255,255,255,0.06);
+        color: #fff;
+        font-size: 16px;
+        outline: none;
+    }
+    .gate-form input:focus { border-color: var(--g-acc); }
+    .gate-form button {
+        height: 48px;
+        padding: 0 22px;
+        border-radius: 24px;
+        border: none;
+        background-color: var(--g-acc);
+        color: var(--g-bg);
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background-color 2.2s ease, color 2.2s ease;
+    }
+    .gate-form button:disabled { opacity: 0.5; }
+    .gate-err { min-height: 18px; font-size: 14px; color: #ff9a9a; }
+
+    /* ===== LOADER: an "A" being written ===== */
+    .loader {
+        position: fixed;
+        inset: 0;
+        z-index: 310;
+        background: var(--bg);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 22px;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.6s ease, background 4s ease;
+    }
+    .loader.show { opacity: 1; pointer-events: auto; }
+    .loader-a { width: min(46vw, 200px); overflow: visible; }
+    .loader-a path {
+        fill: none;
+        stroke: #fff;
+        stroke-width: 5;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        stroke-dasharray: 1 2;
+        stroke-dashoffset: 1;
+        filter: drop-shadow(0 0 6px var(--accent));
+    }
+    .loader.done .loader-a path { animation: aglow 1s ease-in-out; }
+    @keyframes aglow {
+        50% { filter: drop-shadow(0 0 10px var(--accent)) drop-shadow(0 0 28px var(--accent)); }
+    }
+    .loader-cap {
+        font-family: 'MixHand', 'Oooh Baby', cursive;
+        font-size: 15px;
+        color: rgba(255,255,255,0.45);
+    }
+
+    audio { display: none; }
+
+    @media (max-width: 400px) {
+        .cassette { width: 170px; }
+        .top-zone { height: 140px; }
+        .scroll-zone { top: 140px; bottom: 170px; }
+        .track-title { font-size: 13px; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .cassette.spinning, .track.active .track-indicator { animation: none; }
+    }
+</style>
+<script>
+    // GitHub treats sticker-C.JPG and sticker-c.jpg as different files; try the other spellings if one is missing
+    function nextImg(img) {
+        const list = (img.dataset.alt || '').split(',').filter(Boolean);
+        const n = list.shift();
+        if (!n) { img.onerror = null; return; }
+        img.dataset.alt = list.join(',');
+        img.src = n;
+    }
+</script>
+</head>
+<body class="side-a">
+
+    <!-- TOP: CASSETTE (one photo per side, crossfades) -->
+    <div class="top-zone">
+        <div class="cassette" id="cassette">
+            <img class="deck deck-a" src="sticker-a.jpg" alt="" data-alt="sticker-A.JPG,sticker-A.jpg,sticker-a.JPG,sticker-A.jpeg" onerror="nextImg(this)">
+            <img class="deck deck-b" src="sticker-b.jpg" alt="" data-alt="sticker-B.JPG,sticker-B.jpg,sticker-b.JPG,sticker-B.jpeg" onerror="nextImg(this)">
+            <img class="deck deck-c" src="sticker-c.jpg" alt="" data-alt="sticker-C.JPG,sticker-C.jpg,sticker-c.JPG,sticker-C.jpeg" onerror="nextImg(this)">
+            <div class="side-tag" id="sideLabel">side a · daylight</div>
+        </div>
+    </div>
+
+    <!-- MIDDLE: TRACKLIST (built by the script below) -->
+    <div class="scroll-zone" id="scrollZone">
+        <div class="tracklist" id="tracklist"></div>
+    </div>
+
+    <!-- INTRO + CODE SCREEN -->
+    <div class="gate" id="gate" data-phase="0">
+        <h1 class="gate-title">awesome mix</h1>
+        <div class="sky">
+            <div class="stop"><span class="orbwrap"><span class="orb"></span></span><span class="stop-side">side a</span><span class="stop-name">daylight</span></div>
+            <div class="stop"><span class="orbwrap horizon"><span class="orb orb-dusk"></span></span><span class="stop-side">side b</span><span class="stop-name">twilight</span></div>
+            <div class="stop"><span class="orbwrap"><span class="orb orb-night"></span></span><span class="stop-side">side c</span><span class="stop-name">midnight</span></div>
+        </div>
+        <form class="gate-form" id="gateForm">
+            <input id="gateInput" type="password" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="code" aria-label="Code">
+            <button type="submit" id="gateBtn">open</button>
+        </form>
+        <p class="gate-err" id="gateErr"></p>
+    </div>
+
+    <!-- LOADER -->
+    <div class="loader" id="loader">
+        <svg class="loader-a" viewBox="0 0 200 220" aria-hidden="true">
+            <path id="aStroke1" pathLength="1" d="M22 198 C28 195 33 192 38 188 C58 150 82 84 98 36 C102 24 110 24 114 38 C128 92 146 148 166 186 C170 194 178 192 184 184"/>
+            <path id="aStroke2" pathLength="1" d="M58 144 C84 134 120 134 150 144"/>
+        </svg>
+        <p class="loader-cap">winding the tape</p>
+    </div>
+
+    <audio id="audio"></audio>
+
+    <!-- BOTTOM: PLAYER BAR -->
+    <div class="player-bar">
+        <div class="now-playing" id="nowPlaying"></div>
+        <div class="bar-progress" id="progressTrack"><div class="bar-fill" id="progressFill"></div></div>
+        <div class="bar-controls">
+            <button class="bar-btn" id="btnShuffle" title="Shuffle" aria-label="Shuffle">
+                <svg class="stroke" viewBox="0 0 24 24"><path d="M2 18h1.4c1.3 0 2.5-.6 3.3-1.7l6.1-8.6c.8-1.1 2-1.7 3.3-1.7H22"/><path d="m18 2 4 4-4 4"/><path d="M2 6h1.9c1.5 0 2.9.9 3.6 2.2"/><path d="M22 18h-5.9c-1.3 0-2.6-.7-3.3-1.8l-.5-.8"/><path d="m18 14 4 4-4 4"/></svg>
+            </button>
+            <button class="bar-btn" id="btnPrev" aria-label="Previous">
+                <svg viewBox="0 0 24 24"><path d="M6 5h2v14H6zM20 5v14L9 12z"/></svg>
+            </button>
+            <button class="bar-btn play-btn" id="btnPlay" aria-label="Play or pause">
+                <svg class="i-play" viewBox="0 0 24 24"><path d="M8 4v16l13-8z"/></svg>
+                <svg class="i-pause" viewBox="0 0 24 24"><path d="M6 4h4v16H6zM14 4h4v16h-4z"/></svg>
+            </button>
+            <button class="bar-btn" id="btnNext" aria-label="Next">
+                <svg viewBox="0 0 24 24"><path d="M16 5h2v14h-2zM4 5v14l11-7z"/></svg>
+            </button>
+            <button class="bar-btn" id="btnLoop" title="Loop" aria-label="Loop">
+                <svg class="stroke" viewBox="0 0 24 24"><path d="m17 2 4 4-4 4"/><path d="M3 11v-1a4 4 0 0 1 4-4h14"/><path d="m7 22-4-4 4-4"/><path d="M21 13v1a4 4 0 0 1-4 4H3"/></svg>
+            </button>
+        </div>
+    </div>
+
+<script>
+    /* ===== YOUR TRACKS =====
+       [ mp3 filename, title, artist, note ]
+       Write your messages in the last slot of each line. */
+    const TRACKS = [
+        ['KAYTRANADA,H.E.R. - Intimidated.mp3', 'Intimidated', 'KAYTRANADA, H.E.R.', 'Track 01'],
+        ['Tyler, The Creator,Ryan Beatty,Santigold - Lights On.mp3', 'Lights On', 'Tyler, The Creator, Ryan Beatty, Santigold', 'Track 02'],
+        ['RAYE - Worth It.mp3', 'Worth It.', 'RAYE', 'Track 03'],
+        ['Frank Ocean - Pink + White.mp3', 'Pink + White', 'Frank Ocean', 'Track 04'],
+        ['hard life,Arlo Parks - Sangria.mp3', 'Sangria', 'hard life, Arlo Parks', 'Track 05'],
+        ['The Beatles - In My Life.mp3', 'In My Life', 'The Beatles', 'Track 06'],
+        ['Fergie - Pedestal.mp3', 'Pedestal', 'Fergie', 'Track 07'],
+        ['Tinashe - Pillow Fight.mp3', 'Pillow Fight', 'Tinashe', 'Track 08'],
+        ['FKA twigs - Piece Of Mine.mp3', 'Piece Of Mine', 'FKA twigs', 'Track 09'],
+        ['Kanye West - Family Business.mp3', 'Family Business', 'Kanye West', 'Track 10'],
+        ['%D0%90%D0%9B%D0%9B%D0%81%D0%9A%D0%90,%D0%98%D0%BB%D1%8C%D1%8F%20-%20%D0%9D%D0%BE%D1%87%D0%B8%20%D0%BD%D0%B0%D0%BF%D1%80%D0%BE%D0%BB%D1%91%D1%82.mp3', 'Ночи напролёт', 'АЛЛЁКА, Илья', 'Track 11'],
+        ['Magdalena Bay - Vampire in the Corner.mp3', 'Vampire in the Corner', 'Magdalena Bay', 'Track 12'],
+        ['ROSAL%C3%8DA,The%20Weeknd%20-%20LA%20FAMA.mp3', 'LA FAMA', 'ROSALÍA, The Weeknd', 'Track 13'],
+        ['Priya Ragu - Lockdown.mp3', 'Lockdown', 'Priya Ragu', 'Track 14'],
+        ['Chris Lake,Amber Mark - In My Head.mp3', 'In My Head', 'Chris Lake, Amber Mark', 'Track 15']
+    ];
+
+    const SIDE_NAMES = { a: 'daylight', b: 'twilight', c: 'midnight' };
+    const SIDE_LABELS = { 0: 'side a · daylight', 6: 'side b · twilight', 12: 'side c · midnight' };
+
+    // Build the tracklist
+    const tracklist = document.getElementById('tracklist');
+    TRACKS.forEach(([src, title, artist, note], i) => {
+        if (i in SIDE_LABELS) {
+            tracklist.insertAdjacentHTML('beforeend', `<div class="act-label">${SIDE_LABELS[i]}</div>`);
+        }
+        tracklist.insertAdjacentHTML('beforeend', `
+            <div class="track" data-src="${src}" data-note="${note}">
+                <span class="track-num">${String(i + 1).padStart(2, '0')}</span>
+                <div class="track-info">
+                    <div class="track-title">${title}</div>
+                    <div class="track-artist">${artist}</div>
+                </div>
+                <div class="track-indicator"></div>
+            </div>`);
+    });
+
+    /* ===== PASSCODE + DECRYPTION ===== */
+    const gate = document.getElementById('gate');
+    const gateForm = document.getElementById('gateForm');
+    const gateInput = document.getElementById('gateInput');
+    const gateBtn = document.getElementById('gateBtn');
+    const gateErr = document.getElementById('gateErr');
+    // intro: daylight, twilight, midnight take turns, like a day passing
+    let phase = 0;
+    const phaseTimer = setInterval(() => { phase = (phase + 1) % 3; gate.dataset.phase = phase; }, 2600);
+    let cryptoKey = null;
+    const urlCache = new Map();
+    const prefetching = new Set();
+
+    function hex2bytes(h) { return Uint8Array.from(h.match(/../g).map(b => parseInt(b, 16))); }
+
+    async function deriveKey(code, salt, iter) {
+        const base = await crypto.subtle.importKey('raw', new TextEncoder().encode(code), 'PBKDF2', false, ['deriveKey']);
+        return crypto.subtle.deriveKey(
+            { name: 'PBKDF2', salt, iterations: iter, hash: 'SHA-256' },
+            base, { name: 'AES-GCM', length: 256 }, false, ['decrypt']
+        );
+    }
+
+    // file layout: 12-byte IV, then ciphertext
+    function decryptBytes(key, buf) {
+        return crypto.subtle.decrypt({ name: 'AES-GCM', iv: new Uint8Array(buf, 0, 12) }, key, buf.slice(12));
+    }
+
+    async function unlock(code) {
+        const res = await fetch('audio/config.json', { cache: 'no-cache' });
+        if (!res.ok) throw new Error('config missing');
+        const cfg = await res.json();
+        const key = await deriveKey(code, hex2bytes(cfg.salt), cfg.iter);
+        await decryptBytes(key, hex2bytes(cfg.check).buffer); // throws if the code is wrong
+        cryptoKey = key;
+    }
+
+    async function getUrl(idx, onProgress) {
+        if (urlCache.has(idx)) {
+            const u = urlCache.get(idx);
+            urlCache.delete(idx); urlCache.set(idx, u);   // mark as recently used
+            if (onProgress) onProgress(1);
+            return u;
+        }
+        const res = await fetch(`audio/t${String(idx + 1).padStart(2, '0')}.enc`);
+        if (!res.ok) throw new Error('track missing');
+        const total = Number(res.headers.get('content-length')) || 0;
+        let bytes;
+        if (onProgress && res.body && total) {
+            const reader = res.body.getReader();
+            const chunks = [];
+            let got = 0;
+            for (;;) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                chunks.push(value);
+                got += value.length;
+                onProgress(Math.min(got / total, 1) * 0.9);   // download = 90%, unscrambling = last 10%
+            }
+            const joined = new Uint8Array(got);
+            let off = 0;
+            for (const c of chunks) { joined.set(c, off); off += c.length; }
+            bytes = joined.buffer;
+        } else {
+            if (onProgress) onProgress(null);                  // size unknown
+            bytes = await res.arrayBuffer();
+        }
+        const plain = await decryptBytes(cryptoKey, bytes);
+        const url = URL.createObjectURL(new Blob([plain], { type: 'audio/mpeg' }));
+        urlCache.set(idx, url);
+        while (urlCache.size > 4) {   // keep memory small on phones, never drop the song that is playing
+            const oldest = [...urlCache.keys()].find(k => k !== loadedIndex && k !== idx);
+            if (oldest === undefined) break;
+            URL.revokeObjectURL(urlCache.get(oldest));
+            urlCache.delete(oldest);
+        }
+        if (onProgress) onProgress(1);
+        return url;
+    }
+
+    // quietly get a song ready (download + unscramble) before it is needed
+    function prefetch(idx) {
+        if (!cryptoKey || urlCache.has(idx) || prefetching.has(idx)) return;
+        prefetching.add(idx);
+        getUrl(idx).catch(() => {}).finally(() => prefetching.delete(idx));
+    }
+
+    function nextOf(i) {
+        return isShuffling
+            ? shuffleOrder[(shuffleOrder.indexOf(i) + 1) % shuffleOrder.length]
+            : (i + 1) % TRACKS.length;
+    }
+
+    // phones only allow sound after a tap: do a silent play inside the tap on "open"
+    function unlockAudio() {
+        audio.src = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=';
+        audio.play().then(() => audio.pause()).catch(() => {});
+    }
+
+    const clamp01 = x => Math.max(0, Math.min(1, x));
+
+    // After the code is right: write the "A" while the first song really loads
+    async function enter() {
+        const loader = document.getElementById('loader');
+        const strokes = [document.getElementById('aStroke1'), document.getElementById('aStroke2')];
+        const draw = p => {
+            strokes[0].style.strokeDashoffset = 1 - clamp01(p / 0.72);
+            strokes[1].style.strokeDashoffset = 1 - clamp01((p - 0.72) / 0.28);
+        };
+        draw(0);
+        loader.classList.add('show');
+
+        let real = 0, creep = false, jobDone = false;
+        getUrl(currentIndex, p => { if (p === null) creep = true; else real = p; })
+            .catch(err => console.warn(err))
+            .finally(() => { jobDone = true; prefetch((currentIndex + 1) % TRACKS.length); });
+
+        const MIN_MS = 2800;   // the A always takes at least this long to write
+        const t0 = performance.now();
+        let shown = 0;
+        let last = t0;
+        await new Promise(resolve => {
+            const frame = now => {
+                const t = now - t0;
+                const dt = Math.min(now - last, 200); last = now;
+                let target = jobDone ? 1 : (creep ? Math.min(0.85, t / 7000) : Math.min(real, 0.97));
+                target = Math.min(target, t / MIN_MS);
+                shown += (target - shown) * (1 - Math.exp(-dt / 160));   // time-based, so slow phones still finish
+                draw(shown);
+                if (jobDone && t >= MIN_MS && (shown > 0.995 || t >= MIN_MS + 1500)) { draw(1); resolve(); return; }
+                requestAnimationFrame(frame);
+            };
+            requestAnimationFrame(frame);
+        });
+
+        loader.classList.add('done');
+        await new Promise(r => setTimeout(r, 900));
+        gate.classList.add('hidden');
+        clearInterval(phaseTimer);
+        loader.classList.remove('show');
+        setTimeout(() => loader.classList.remove('done'), 800);
+    }
+
+    gateForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const code = gateInput.value.trim().toLowerCase();
+        if (!code) return;
+        unlockAudio();
+        gateBtn.disabled = true;
+        gateErr.textContent = '';
+        try {
+            await unlock(code);
+        } catch (err) {
+            gateErr.textContent = (err && err.name === 'OperationError')
+                ? 'that’s not the code'
+                : 'couldn’t load, check your connection';
+            gateBtn.disabled = false;
+            return;
+        }
+        try { sessionStorage.setItem('mixcode', code); } catch (_) {}
+        await enter();
+        gateBtn.disabled = false;
+    });
+
+    // reload in the same tab: skip the code screen, still write the A
+    (async () => {
+        try {
+            const c = sessionStorage.getItem('mixcode');
+            if (!c) return;
+            await unlock(c);
+            await enter();
+        } catch (_) {}
+    })();
+
+    // add #preview to the address to look at the design without a code (songs stay locked)
+    if (location.hash === '#preview') gate.classList.add('hidden');
+
+    const audio = document.getElementById('audio');
+    const tracks = document.querySelectorAll('.track');
+    const scrollZone = document.getElementById('scrollZone');
+    const cassette = document.getElementById('cassette');
+    const btnPlay = document.getElementById('btnPlay');
+    const btnPrev = document.getElementById('btnPrev');
+    const btnNext = document.getElementById('btnNext');
+    const btnShuffle = document.getElementById('btnShuffle');
+    const btnLoop = document.getElementById('btnLoop');
+    const progressTrack = document.getElementById('progressTrack');
+    const progressFill = document.getElementById('progressFill');
+    const sideLabel = document.getElementById('sideLabel');
+    const nowPlaying = document.getElementById('nowPlaying');
+
+    let currentIndex = 0;
+    let isShuffling = false;
+    let isLooping = false;
+    let shuffleOrder = [];
+    let isSwitching = false;
+
+    function getSide(idx) {
+        if (idx < 6) return 'a';
+        if (idx < 12) return 'b';
+        return 'c';
+    }
+
+    function applySide(idx) {
+        const side = getSide(idx);
+        document.body.className = `side-${side}`;
+        sideLabel.textContent = `side ${side} · ${SIDE_NAMES[side]}`;
+    }
+
+    function setPlaying(on) {
+        btnPlay.classList.toggle('is-playing', on);
+        cassette.classList.toggle('spinning', on);
+    }
+
+    function updateNowPlaying() {
+        const t = tracks[currentIndex];
+        nowPlaying.textContent = `${t.querySelector('.track-title').textContent} — ${t.querySelector('.track-artist').textContent}`;
+    }
+
+    // Init
+    const hashIdx = parseInt(window.location.hash.slice(1));
+    if (!isNaN(hashIdx) && hashIdx >= 0 && hashIdx < tracks.length) currentIndex = hashIdx;
+
+    let loadedIndex = -1;
+    let playToken = 0;
+    tracks[currentIndex].classList.add('active');
+    applySide(currentIndex);
+    updateNowPlaying();
+
+    function scrollToActive() {
+        const active = tracks[currentIndex];
+        const zoneRect = scrollZone.getBoundingClientRect();
+        const trackRect = active.getBoundingClientRect();
+        if (trackRect.top < zoneRect.top || trackRect.bottom > zoneRect.bottom) {
+            scrollZone.scrollTo({ top: active.offsetTop - 20, behavior: 'smooth' });
+        }
+    }
+
+    function togglePlay() {
+        if (loadedIndex !== currentIndex) { playTrack(currentIndex); return; }
+        if (audio.paused) {
+            audio.play().then(() => setPlaying(true)).catch(err => { console.warn(err); setPlaying(false); });
+        } else {
+            audio.pause();
+            setPlaying(false);
+        }
+    }
+
+    btnPlay.addEventListener('click', togglePlay);
+
+    async function playTrack(idx) {
+        if (!cryptoKey) return;
+        const token = ++playToken;
+        currentIndex = idx;
+        audio.pause();
+        setPlaying(false);
+
+        tracks.forEach(t => t.classList.remove('active'));
+        tracks[idx].classList.add('active');
+        applySide(idx);
+        updateNowPlaying();
+        progressFill.style.width = '0%';
+        scrollToActive();
+
+        try {
+            const url = await getUrl(idx);
+            if (token !== playToken) return;   // you tapped another song meanwhile
+            audio.src = url;
+            loadedIndex = idx;
+            prefetch(nextOf(idx));
+            await audio.play();
+            if (token === playToken) setPlaying(true);
+        } catch (err) {
+            console.warn(err);
+            if (token === playToken) {
+                setPlaying(false);
+                // say what went wrong instead of failing silently
+                const why = !err ? 'couldn’t load, tap to retry'
+                    : err.name === 'NotAllowedError' ? 'tap play to start'
+                    : err.name === 'OperationError' ? 'this file doesn’t match the code'
+                    : err.message === 'track missing' ? 'this file isn’t on the site'
+                    : 'couldn’t load, tap to retry';
+                nowPlaying.textContent = `song ${idx + 1}: ${why}`;
+            }
+        }
+    }
+
+    tracks.forEach((t, i) => t.addEventListener('click', () => playTrack(i)));
+
+    btnPrev.addEventListener('click', () => {
+        let idx = currentIndex - 1;
+        if (idx < 0) idx = tracks.length - 1;
+        playTrack(idx);
+    });
+
+    btnNext.addEventListener('click', () => {
+        playTrack(nextOf(currentIndex));
+    });
+
+    audio.addEventListener('ended', () => {
+        if (loadedIndex < 0) return;   // ignore the silent unlock clip
+        if (isLooping) { audio.currentTime = 0; audio.play().catch(() => {}); return; }
+        btnNext.click();
+    });
+
+    btnShuffle.addEventListener('click', () => {
+        isShuffling = !isShuffling;
+        btnShuffle.classList.toggle('active-mode', isShuffling);
+        if (isShuffling) {
+            shuffleOrder = Array.from(tracks.keys());
+            for (let i = shuffleOrder.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [shuffleOrder[i], shuffleOrder[j]] = [shuffleOrder[j], shuffleOrder[i]];
+            }
+        }
+    });
+
+    btnLoop.addEventListener('click', () => {
+        isLooping = !isLooping;
+        btnLoop.classList.toggle('active-mode', isLooping);
+    });
+
+    audio.addEventListener('timeupdate', () => {
+        if (audio.duration && !isNaN(audio.duration)) {
+            progressFill.style.width = (audio.currentTime / audio.duration * 100) + '%';
+        }
+    });
+
+    progressTrack.addEventListener('click', (e) => {
+        if (!audio.duration) return;
+        const rect = progressTrack.getBoundingClientRect();
+        audio.currentTime = ((e.clientX - rect.left) / rect.width) * audio.duration;
+    });
+
+document.addEventListener('keydown', (e) => {
+        if (e.target === gateInput) return;
+        if (e.code === 'Space') { e.preventDefault(); togglePlay(); }
+    });
+
+    // keep the keys in sync with the lock screen / headphones, and show the song there
+    audio.addEventListener('play',  () => { if (loadedIndex >= 0) setPlaying(true); });
+    audio.addEventListener('pause', () => { if (!audio.ended) setPlaying(false); });
+
+    if ('mediaSession' in navigator) {
+        const ms = navigator.mediaSession;
+        audio.addEventListener('play', () => {
+            const t = tracks[currentIndex];
+            ms.metadata = new MediaMetadata({
+                title: t.querySelector('.track-title').textContent,
+                artist: t.querySelector('.track-artist').textContent,
+                album: 'awesome mix',
+                artwork: [{ src: `sticker-${getSide(currentIndex)}.jpg`, sizes: '800x500', type: 'image/jpeg' }]
+            });
+        });
+        ms.setActionHandler('play', () => audio.play());
+        ms.setActionHandler('pause', () => audio.pause());
+        ms.setActionHandler('previoustrack', () => btnPrev.click());
+        ms.setActionHandler('nexttrack', () => btnNext.click());
+    }
+</script>
+</body>
+</html>
